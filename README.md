@@ -1,0 +1,2 @@
+# rust-piler
+Fun :sunglasses:
