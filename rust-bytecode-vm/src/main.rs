@@ -22,6 +22,7 @@ impl Display for OpCode {
         let instruction = match self {
             Self::OpReturn => "OpReturn",
             Self::OpConstant => "OpConstant",
+            Self::OpLongConstant => "OpLongConstant",
         };
         write!(f, "{}", instruction)
     }
@@ -89,6 +90,22 @@ impl Chunk {
                 );
                 offset + 2
             }
+            OpCode::OpLongConstant => {
+                // constant_offset is in little endian, last byte is set to 0x00
+                // range of constant_offset is therefore 0-16777215
+                // converted to u32, since I want to read in 4bytes, 32bits
+                let mut constant_offset: [u8; 4] = [0; 4];
+                constant_offset[0..3].copy_from_slice(&self.code[(offset + 1)..(offset + 4)]);
+                let constant_offset = u32::from_le_bytes(constant_offset);
+                println!(
+                    "{} {:16} {} '{}'",
+                    instruction_prefix,
+                    instruction,
+                    constant_offset,
+                    self.constants[constant_offset as usize]
+                );
+                offset + 4
+            }
             _ => panic!("OpCode not implemented yet, {}", instruction),
         }
     }
@@ -97,10 +114,15 @@ impl Chunk {
 fn main() {
     let mut chunk = Chunk::default();
     let constant_idx = chunk.add_constants(3.1);
+    chunk.add_constants(123.2);
     chunk.add_code(1, 123);
     // When we add the constant offset into the stack, we need to encode it as a u8
     chunk.add_code(constant_idx as u8, 123);
-    chunk.add_code(0, 123);
+    chunk.add_code(2, 124);
+    chunk.add_code(0x01, 124);
+    chunk.add_code(0x00, 124);
+    chunk.add_code(0x00, 124);
+    chunk.add_code(0, 124);
     chunk.disassemble("test chunk");
     chunk.free();
 }
