@@ -18,7 +18,7 @@ impl Chunk {
         self.lines = Vec::default();
     }
     /// Returns offset of where constant is stored in constants stack
-    pub fn add_constants(&mut self, constant: f32) -> usize {
+    pub fn add_constant(&mut self, constant: f32) -> usize {
         self.constants.push(constant);
         self.constants.len() - 1
     }
@@ -47,7 +47,12 @@ impl Chunk {
         };
         // Deal iwth instruction/OpCode here
         match instruction {
-            OpCode::OpReturn => {
+            OpCode::OpReturn
+            | OpCode::OpNegate
+            | OpCode::OpAdd
+            | OpCode::OpSubtract
+            | OpCode::OpMultiply
+            | OpCode::OpDivide => {
                 println!("{} {}", instruction_prefix, instruction);
                 offset + 1
             }
@@ -66,7 +71,7 @@ impl Chunk {
                 // constant_offset is in little endian, last byte is set to 0x00
                 // range of constant_offset is therefore 0-16777215
                 // converted to u32, since I want to read in 4bytes, 32bits
-                let mut constant_offset: [u8; 4] = [0; 4];
+                let mut constant_offset: [u8; 4] = Default::default();
                 constant_offset[0..3].copy_from_slice(&self.code[(offset + 1)..(offset + 4)]);
                 let constant_offset = u32::from_le_bytes(constant_offset);
                 println!(
@@ -77,10 +82,6 @@ impl Chunk {
                     self.constants[constant_offset as usize]
                 );
                 offset + 4
-            }
-            OpCode::OpNegate => {
-                println!("{} {}", instruction_prefix, instruction);
-                offset + 1
             }
             _ => panic!("OpCode not implemented yet, {}", instruction),
         }

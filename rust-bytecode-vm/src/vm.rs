@@ -47,6 +47,28 @@ impl VM {
         self.stack_top -= 1;
         value
     }
+    fn binary_op(&mut self, op: OpCode) {
+        // Only process certain binary Ops
+        let b = self.pop();
+        let a = self.pop();
+        match op {
+            OpCode::OpAdd => {
+                self.push(a + b);
+            }
+            OpCode::OpSubtract => {
+                self.push(a - b);
+            }
+            OpCode::OpMultiply => {
+                self.push(a * b);
+            }
+            OpCode::OpDivide => {
+                self.push(a / b);
+            }
+            _ => {
+                panic!("Should not have processed this op, {}", op);
+            }
+        }
+    }
     pub fn run(&mut self) -> InterpretResult {
         #[allow(clippy::never_loop)]
         loop {
@@ -62,14 +84,27 @@ impl VM {
                     return InterpretResult::Ok;
                 }
                 OpCode::OpConstant => {
-                    let constant_offset = self.read_byte() as usize;
-                    let value = self.chunk.constants[constant_offset];
+                    let constant_offset = self.read_byte();
+                    let value = self.chunk.constants[constant_offset as usize];
                     // println!("{}", value);
+                    self.push(value);
+                }
+                OpCode::OpLongConstant => {
+                    let mut constant_offset: [u8; 4] = Default::default();
+                    #[allow(clippy::needless_range_loop)]
+                    for i in 0..3 {
+                        constant_offset[i] = self.read_byte();
+                    }
+                    let constant_offset = u32::from_le_bytes(constant_offset);
+                    let value = self.chunk.constants[constant_offset as usize];
                     self.push(value);
                 }
                 OpCode::OpNegate => {
                     let value = self.pop();
                     self.push(-value);
+                }
+                OpCode::OpAdd | OpCode::OpSubtract | OpCode::OpMultiply | OpCode::OpDivide => {
+                    self.binary_op(instruction);
                 }
                 _ => return InterpretResult::Error(InterpretError::Compile),
             }

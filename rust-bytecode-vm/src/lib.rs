@@ -1,6 +1,7 @@
 pub mod chunk;
 pub mod common;
 pub mod consts;
+pub mod helper;
 pub mod vm;
 
 pub use chunk::Chunk;
