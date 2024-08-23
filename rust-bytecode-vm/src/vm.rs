@@ -103,8 +103,12 @@ impl VM {
                     self.push(value);
                 }
                 OpCode::OpNegate => {
-                    let value = self.pop();
-                    self.push(-value);
+                    // Unoptimized
+                    // let value = self.pop();
+                    // self.push(-value);
+
+                    // Modify in place
+                    self.stack[self.stack_top] = -self.stack[self.stack_top];
                 }
                 OpCode::OpAdd | OpCode::OpSubtract | OpCode::OpMultiply | OpCode::OpDivide => {
                     self.binary_op(instruction);
