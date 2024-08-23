@@ -3,6 +3,7 @@ use std::fmt::Display;
 pub enum OpCode {
     OpReturn,
     OpConstant,
+    OpLongConstant,
 }
 impl TryFrom<u8> for OpCode {
     type Error = String;
@@ -11,6 +12,7 @@ impl TryFrom<u8> for OpCode {
         match value {
             0 => Ok(Self::OpReturn),
             1 => Ok(Self::OpConstant),
+            2 => Ok(Self::OpLongConstant),
             _ => Err(format!("Unkown OpCode, {}", value)),
         }
     }
