@@ -11,6 +11,7 @@ fn main() {
     // chunk.add_code(0x01, 124);
     // chunk.add_code(0x00, 124);
     // chunk.add_code(0x00, 124);
+    chunk.add_code(3, 123);
     chunk.add_code(0, 124);
     let mut vm = VM::new(chunk);
     vm.run();

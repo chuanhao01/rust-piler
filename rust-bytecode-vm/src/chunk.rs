@@ -78,6 +78,10 @@ impl Chunk {
                 );
                 offset + 4
             }
+            OpCode::OpNegate => {
+                println!("{} {}", instruction_prefix, instruction);
+                offset + 1
+            }
             _ => panic!("OpCode not implemented yet, {}", instruction),
         }
     }
