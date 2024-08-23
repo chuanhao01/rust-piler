@@ -11,7 +11,7 @@
     "./Cargo.toml"
   ],
   // Specify which features flags to compile and check for
-  "rust-analyzer.cargo.features": ["debug"],
+  "rust-analyzer.cargo.features": "all",
   "markdownlint.config": {
     "MD007": { "indent": 2 },
     "MD024": false,

@@ -72,9 +72,12 @@ impl VM {
     pub fn run(&mut self) -> InterpretResult {
         #[allow(clippy::never_loop)]
         loop {
-            #[cfg(feature = "debug")]
+            #[cfg(feature = "debug_stack")]
             {
                 println!("{:#?}", self.stack);
+            }
+            #[cfg(feature = "debug")]
+            {
                 self.chunk.disassemble_instruction(self.ip);
             }
             let instruction = OpCode::try_from(self.read_byte()).unwrap();
