@@ -111,6 +111,57 @@ impl Chunk {
     }
 }
 
+enum InterpretResult {
+    Ok,
+    Error(InterpretError),
+}
+enum InterpretError {
+    Compile,
+    Runtime,
+}
+
+struct VM {
+    chunk: Chunk,
+    // Instruction Pointer
+    ip: usize,
+}
+impl VM {
+    pub fn init() {}
+    pub fn new(chunk: Chunk) -> Self {
+        Self::init();
+        Self { chunk, ip: 0 }
+    }
+    pub fn free(&mut self) {
+        self.chunk.free();
+    }
+    pub fn read_byte(&mut self) -> u8 {
+        let b = self.chunk.code[self.ip];
+        self.ip += 1;
+        b
+    }
+    pub fn run(&mut self) -> InterpretResult {
+        #[allow(clippy::never_loop)]
+        loop {
+            #[cfg(feature = "debug")]
+            {
+                self.chunk.disassemble_instruction(self.ip);
+            }
+            let instruction = OpCode::try_from(self.read_byte()).unwrap();
+            match instruction {
+                OpCode::OpReturn => {
+                    return InterpretResult::Ok;
+                }
+                OpCode::OpConstant => {
+                    let constant_offset = self.read_byte() as usize;
+                    let value = self.chunk.constants[constant_offset];
+                    println!("{}", value);
+                }
+                _ => return InterpretResult::Error(InterpretError::Compile),
+            }
+        }
+    }
+}
+
 fn main() {
     let mut chunk = Chunk::default();
     let constant_idx = chunk.add_constants(3.1);
@@ -118,11 +169,14 @@ fn main() {
     chunk.add_code(1, 123);
     // When we add the constant offset into the stack, we need to encode it as a u8
     chunk.add_code(constant_idx as u8, 123);
-    chunk.add_code(2, 124);
-    chunk.add_code(0x01, 124);
-    chunk.add_code(0x00, 124);
-    chunk.add_code(0x00, 124);
+    // chunk.add_code(2, 124);
+    // chunk.add_code(0x01, 124);
+    // chunk.add_code(0x00, 124);
+    // chunk.add_code(0x00, 124);
     chunk.add_code(0, 124);
-    chunk.disassemble("test chunk");
-    chunk.free();
+    let mut vm = VM::new(chunk);
+    vm.run();
+    vm.free();
+    // chunk.disassemble("test chunk");
+    // chunk.free();
 }
