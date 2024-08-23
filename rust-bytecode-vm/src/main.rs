@@ -31,13 +31,16 @@ impl Display for OpCode {
 pub struct Chunk {
     code: Vec<u8>,
     constants: Vec<f32>,
+    lines: Vec<u32>,
 }
 impl Chunk {
-    pub fn add_code(&mut self, op: u8) {
+    pub fn add_code(&mut self, op: u8, line: u32) {
         self.code.push(op);
+        self.lines.push(line);
     }
     pub fn free_code(&mut self) {
         self.code = Vec::default();
+        self.lines = Vec::default();
     }
     /// Returns offset of where constant is stored in constants stack
     pub fn add_constants(&mut self, constant: f32) -> usize {
@@ -62,15 +65,23 @@ impl Chunk {
     }
     pub fn disassemble_instruction(&self, offset: usize) -> usize {
         let instruction = OpCode::try_from(self.code[offset]).unwrap();
-        println!("{:04} {}", offset, instruction);
+        let instruction_prefix = if offset > 0 && self.lines[offset] == self.lines[offset - 1] {
+            format!("{:04}    |", offset)
+        } else {
+            format!("{:04} {:4}", offset, self.lines[offset])
+        };
         // Deal iwth instruction/OpCode here
         match instruction {
-            OpCode::OpReturn => offset + 1,
+            OpCode::OpReturn => {
+                println!("{} {}", instruction_prefix, instruction);
+                offset + 1
+            }
             OpCode::OpConstant => {
                 let constant_offset = self.code[offset + 1];
                 println!(
-                    "{:04} ConstantOffset {:04} {}",
-                    offset + 1,
+                    "{} {:16} {} '{}'",
+                    instruction_prefix,
+                    instruction,
                     constant_offset,
                     self.constants[constant_offset as usize]
                 );
@@ -84,10 +95,10 @@ impl Chunk {
 fn main() {
     let mut chunk = Chunk::default();
     let constant_idx = chunk.add_constants(3.1);
-    chunk.add_code(0);
-    chunk.add_code(1);
+    chunk.add_code(1, 123);
     // When we add the constant offset into the stack, we need to encode it as a u8
-    chunk.add_code(constant_idx as u8);
+    chunk.add_code(constant_idx as u8, 123);
+    chunk.add_code(0, 123);
     chunk.disassemble("test chunk");
     chunk.free();
 }
