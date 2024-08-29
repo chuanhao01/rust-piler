@@ -41,7 +41,7 @@ fn old_main() {
 }
 
 fn compile(source: String) {
-    let mut source: Vec<char> = source.chars().collect();
+    let source: Vec<char> = source.chars().collect();
     let mut scanner = Scanner::new(source);
     let mut line = 2i64.pow(60) as usize; // Big number that should not be correct on first iteration
     loop {
@@ -108,8 +108,8 @@ fn repl() -> Result<(), String> {
         std::io::stdout().flush().unwrap();
         let mut line = String::new();
         match std::io::stdin().read_line(&mut line) {
-            Ok(s) => {
-                dbg!(line.clone());
+            Ok(_) => {
+                // dbg!(line.clone());
                 if line.len() == 1 {
                     // Empty line
                     break Ok(());

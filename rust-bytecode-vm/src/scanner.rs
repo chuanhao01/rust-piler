@@ -16,12 +16,13 @@ impl Scanner {
         }
     }
     pub fn scan_token(&mut self) -> Token {
-        self.start = self.current;
         self.skip_whitespace();
+        // After skipping whitespace, we could end up at the end of the file
         if self.is_at_end() {
             return self.make_token(TokenType::Eof);
         }
 
+        self.start = self.current;
         let c = self.advance();
         match c {
             '(' => self.make_token(TokenType::LeftParen),
@@ -63,14 +64,12 @@ impl Scanner {
                     self.make_token(TokenType::Less)
                 }
             }
+            '"' => self.string(),
+
             _ => self.error_token(String::from("Unexpected Character")),
         }
     }
     fn advance(&mut self) -> char {
-        if self.is_at_end() {
-            // Should only happen with skip_whitespace, return null terminated
-            return '\0';
-        }
         self.current += 1;
         self.source[self.current - 1]
     }
@@ -95,16 +94,48 @@ impl Scanner {
             }
             let c = self.peek();
             match c {
+                // Manually forward current, since advanced will run into index out of range, since we don't have the null byte terminator
                 ' ' | '\t' | '\r' => {
-                    self.advance();
+                    self.current += 1;
                 }
                 '\n' => {
                     self.line += 1;
-                    self.advance();
+                    self.current += 1;
+                }
+                '/' => {
+                    if self.is_at_end() {
+                        return;
+                    }
+                    // Manual peek forward
+                    if self.source[self.current + 1] == '/' {
+                        self.current += 2; // Skip the //
+
+                        // Ensure that we have not hit the end of the file, or the end of the line
+                        while !self.is_at_end() && self.peek() != '\n' {
+                            self.current += 1;
+                        }
+                    } else {
+                        // Is a divide, pass back control flow
+                        return;
+                    }
                 }
                 _ => return,
             }
         }
+    }
+
+    fn string(&mut self) -> Token {
+        // Take until the ending ", since to enter here, we already took a "
+        while !self.is_at_end() && self.peek() != '"' {
+            // No newline strings for now
+            self.advance();
+        }
+        if self.is_at_end() {
+            return self.error_token(String::from("Unterminated String"));
+        }
+        // Consume the last quote
+        self.advance();
+        self.make_token(TokenType::String)
     }
 
     fn make_token(&self, token_type: TokenType) -> Token {
@@ -122,6 +153,6 @@ impl Scanner {
         }
     }
     fn is_at_end(&self) -> bool {
-        self.current == self.source.len()
+        self.current >= self.source.len()
     }
 }

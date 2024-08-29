@@ -13,3 +13,27 @@ Current instructions are:
   - For all the offset calculating etc
 - Could also use rust inbuilt types
   - But making my own to learn the whole process
+
+
+## Test case generation
+
+Should be divide
+```
+/
+```
+
+Should be EOF
+```
+//
+```
+```
+// wow
+```
+
+Should error
+```
+"
+```
+```
+"no
+```
