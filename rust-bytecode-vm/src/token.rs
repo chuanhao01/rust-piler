@@ -1,10 +1,19 @@
-pub struct Token {
-    _type: TokenType,
-    start: usize,
-    length: usize,
-    line: usize,
+use std::fmt::Display;
+
+pub enum Token {
+    NormalToken {
+        _type: TokenType,
+        start: usize,
+        length: usize,
+        line: usize,
+    },
+    ErrorToken {
+        line: usize,
+        msg: String,
+    },
 }
 
+#[derive(Debug)]
 pub enum TokenType {
     // Single-character tokens.
     LeftParen,
@@ -49,6 +58,10 @@ pub enum TokenType {
     Var,
     While,
     // Final
-    Error,
     Eof,
+}
+impl Display for TokenType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }

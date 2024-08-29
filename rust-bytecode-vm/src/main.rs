@@ -3,7 +3,7 @@ use std::{env, fs, io::Write};
 use rust_bytecode_vm::{
     helper,
     vm::{InterpretError, InterpretResult},
-    Chunk, Scanner, VM,
+    Chunk, Scanner, Token, TokenType, VM,
 };
 
 fn old_main() {
@@ -41,9 +41,59 @@ fn old_main() {
 }
 
 fn compile(source: String) {
-    let scanner = Scanner::new(source.chars().collect());
-    let line = -1;
-    loop {}
+    let mut source: Vec<char> = source.chars().collect();
+    let mut scanner = Scanner::new(source);
+    let mut line = 2i64.pow(60) as usize; // Big number that should not be correct on first iteration
+    loop {
+        let token = scanner.scan_token();
+        match token {
+            Token::ErrorToken {
+                line: token_line,
+                msg,
+            } => {
+                let line_fmt = if line == token_line {
+                    String::from("   |")
+                } else {
+                    line = token_line;
+                    format!("{:4}", line)
+                };
+                println!("{} {:16} '{}'", line_fmt, "ErrorToken", msg);
+            }
+            Token::NormalToken {
+                _type,
+                start,
+                length,
+                line: token_line,
+            } => {
+                let line_fmt = if line == token_line {
+                    String::from("   |")
+                } else {
+                    line = token_line;
+                    format!("{:4}", line)
+                };
+                println!(
+                    "{} {:16} '{}'",
+                    line_fmt,
+                    _type,
+                    match _type {
+                        TokenType::Eof => {
+                            String::from("EOF")
+                        }
+                        _ => {
+                            scanner.source[start..start + length]
+                                .iter()
+                                .collect::<String>()
+                        }
+                    }
+                );
+
+                // Stop compiling
+                if let TokenType::Eof = _type {
+                    break;
+                }
+            }
+        }
+    }
 }
 
 fn interpret(source: String) -> InterpretResult {
@@ -59,6 +109,7 @@ fn repl() -> Result<(), String> {
         let mut line = String::new();
         match std::io::stdin().read_line(&mut line) {
             Ok(s) => {
+                dbg!(line.clone());
                 if line.len() == 1 {
                     // Empty line
                     break Ok(());
