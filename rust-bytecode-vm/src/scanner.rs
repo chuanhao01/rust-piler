@@ -24,6 +24,9 @@ impl Scanner {
 
         self.start = self.current;
         let c = self.advance();
+        if self.is_digit(c) {
+            return self.number();
+        }
         match c {
             '(' => self.make_token(TokenType::LeftParen),
             ')' => self.make_token(TokenType::RightParen),
@@ -74,7 +77,7 @@ impl Scanner {
         self.source[self.current - 1]
     }
     fn match_next(&mut self, expected_char: char) -> bool {
-        // Advances current by 1, and checks expected_char
+        // Checks char, and only advances current if matched
         if self.is_at_end() {
             return false;
         }
@@ -136,6 +139,23 @@ impl Scanner {
         // Consume the last quote
         self.advance();
         self.make_token(TokenType::String)
+    }
+
+    fn is_digit(&self, c: char) -> bool {
+        c.is_numeric()
+    }
+    fn number(&mut self) -> Token {
+        while !self.is_at_end() && self.is_digit(self.peek()) {
+            self.advance();
+        }
+        if self.match_next('.') {
+            // Could be end, so we manually advance
+            while !self.is_at_end() && self.is_digit(self.peek()) {
+                self.advance();
+            }
+        }
+        // Edge case of reaching the end or not followed by .
+        self.make_token(TokenType::Number)
     }
 
     fn make_token(&self, token_type: TokenType) -> Token {
