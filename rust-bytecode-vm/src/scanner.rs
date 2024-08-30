@@ -24,6 +24,9 @@ impl Scanner {
 
         self.start = self.current;
         let c = self.advance();
+        if self.is_alpha(c) {
+            return self.identifier();
+        }
         if self.is_digit(c) {
             return self.number();
         }
@@ -156,6 +159,82 @@ impl Scanner {
         }
         // Edge case of reaching the end or not followed by .
         self.make_token(TokenType::Number)
+    }
+
+    fn is_alpha(&self, c: char) -> bool {
+        // only a-z and underscores
+        c.is_alphabetic() || c == '_'
+    }
+    fn identifier(&mut self) -> Token {
+        // Enters, after already consuming the first character
+        // Handles user defined tokens as well as reserved
+        while !self.is_at_end() && (self.is_alpha(self.peek()) || self.is_digit(self.peek())) {
+            self.advance();
+        }
+        // Consume until the end of the identifier
+        // Pass control to identifier_type, DFA to figure out token type
+        self.make_token(self.identifier_type())
+    }
+    fn identifier_type(&self) -> TokenType {
+        match self.source[self.start] {
+            'a' => self.check_reserved_keyword(1, String::from("nd"), TokenType::And),
+            'c' => self.check_reserved_keyword(1, String::from("lass"), TokenType::Class),
+            'e' => self.check_reserved_keyword(1, String::from("lse"), TokenType::Else),
+            'i' => self.check_reserved_keyword(1, String::from("f"), TokenType::If),
+            'n' => self.check_reserved_keyword(1, String::from("il"), TokenType::Nil),
+            'o' => self.check_reserved_keyword(1, String::from("r"), TokenType::Or),
+            'p' => self.check_reserved_keyword(1, String::from("rint"), TokenType::Print),
+            'r' => self.check_reserved_keyword(1, String::from("eturn"), TokenType::Return),
+            's' => self.check_reserved_keyword(1, String::from("uper"), TokenType::Super),
+            'v' => self.check_reserved_keyword(1, String::from("ar"), TokenType::Var),
+            'w' => self.check_reserved_keyword(1, String::from("hile"), TokenType::Var),
+            'f' => {
+                // Needs atleast 2 more chars
+                if self.current - self.start > 1 {
+                    match self.source[self.start + 1] {
+                        'a' => {
+                            self.check_reserved_keyword(2, String::from("lse"), TokenType::False)
+                        }
+                        'o' => self.check_reserved_keyword(2, String::from("r"), TokenType::For),
+                        'u' => self.check_reserved_keyword(2, String::from("n"), TokenType::Fun),
+                        _ => TokenType::Identifier,
+                    }
+                } else {
+                    TokenType::Identifier
+                }
+            }
+            't' => {
+                if self.current - self.start > 1 {
+                    match self.source[self.start + 1] {
+                        'h' => self.check_reserved_keyword(2, String::from("is"), TokenType::This),
+                        'r' => self.check_reserved_keyword(2, String::from("ue"), TokenType::True),
+                        _ => TokenType::Identifier,
+                    }
+                } else {
+                    TokenType::Identifier
+                }
+            }
+            _ => TokenType::Identifier,
+        }
+    }
+    fn check_reserved_keyword(
+        &self,
+        start: usize,
+        rest: String,
+        token_type: TokenType,
+    ) -> TokenType {
+        // Given control flow in checking the identifier, with reference of start from self.start
+        // Check the rest of the identifier
+
+        // Length check
+        let length = rest.len();
+        if self.current - self.start == start + length
+            && self.source[(self.start + start)..(self.start + start + length)]
+                == rest.chars().collect::<Vec<char>>()
+        {
+            return token_type;
+        }
+        TokenType::Identifier
     }
 
     fn make_token(&self, token_type: TokenType) -> Token {
