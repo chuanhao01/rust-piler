@@ -40,65 +40,21 @@ fn old_main() {
     // chunk.free();
 }
 
-fn compile(source: String) {
+fn compile(source: String, chunk: &mut Chunk) -> bool {
     let source: Vec<char> = source.chars().collect();
     let mut scanner = Scanner::new(source);
-    let mut line = 2i64.pow(60) as usize; // Big number that should not be correct on first iteration
-    loop {
-        let token = scanner.scan_token();
-        match token {
-            Token::ErrorToken {
-                line: token_line,
-                msg,
-            } => {
-                let line_fmt = if line == token_line {
-                    String::from("   |")
-                } else {
-                    line = token_line;
-                    format!("{:4}", line)
-                };
-                println!("{} {:16} '{}'", line_fmt, "ErrorToken", msg);
-            }
-            Token::NormalToken {
-                _type,
-                start,
-                length,
-                line: token_line,
-            } => {
-                let line_fmt = if line == token_line {
-                    String::from("   |")
-                } else {
-                    line = token_line;
-                    format!("{:4}", line)
-                };
-                println!(
-                    "{} {:16} '{}'",
-                    line_fmt,
-                    _type,
-                    match _type {
-                        TokenType::Eof => {
-                            String::from("EOF")
-                        }
-                        _ => {
-                            scanner.source[start..start + length]
-                                .iter()
-                                .collect::<String>()
-                        }
-                    }
-                );
-
-                // Stop compiling
-                if let TokenType::Eof = _type {
-                    break;
-                }
-            }
-        }
-    }
+    true
 }
 
 fn interpret(source: String) -> InterpretResult {
-    compile(source);
-    InterpretResult::Ok
+    let mut chunk = Chunk::default();
+    if !compile(source, &mut chunk) {
+        chunk.free();
+        return InterpretResult::Error(InterpretError::Compile);
+    }
+
+    let mut vm = VM::new(chunk);
+    vm.run()
 }
 
 fn repl() -> Result<(), String> {
