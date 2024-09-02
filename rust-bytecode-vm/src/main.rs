@@ -3,7 +3,7 @@ use std::{env, fs, io::Write};
 use rust_bytecode_vm::{
     helper,
     vm::{InterpretError, InterpretResult},
-    Chunk, Scanner, Token, TokenType, VM,
+    Chunk, Parser, Scanner, Token, TokenType, VM,
 };
 
 fn old_main() {
@@ -40,21 +40,38 @@ fn old_main() {
     // chunk.free();
 }
 
-fn compile(source: String, chunk: &mut Chunk) -> bool {
+fn compile(source: String) -> Result<Chunk, String> {
+    // Meat of it
+    // Takes the source code, creates a scanner
+    // Scanner creates tokens, passes it to the parser
+    // Parser then outputs bytes code made for the VM
+    // VM runs interpret later on
+    let mut chunk = Chunk::default();
+
     let source: Vec<char> = source.chars().collect();
     let mut scanner = Scanner::new(source);
-    true
+    let mut parser = Parser::new(scanner);
+    parser.advance();
+    parser.consume(TokenType::Eof, String::from("Expect end of expression"));
+    if parser.had_error {
+        Err(String::from("Expected to compile a single expression"))
+    } else {
+        Ok(chunk)
+    }
 }
 
 fn interpret(source: String) -> InterpretResult {
-    let mut chunk = Chunk::default();
-    if !compile(source, &mut chunk) {
-        chunk.free();
-        return InterpretResult::Error(InterpretError::Compile);
+    match compile(source) {
+        Ok(chunk) => {
+            let mut vm = VM::new(chunk);
+            vm.run();
+            InterpretResult::Ok
+        }
+        Err(err_msg) => {
+            dbg!(err_msg);
+            InterpretResult::Error(InterpretError::Compile)
+        }
     }
-
-    let mut vm = VM::new(chunk);
-    vm.run()
 }
 
 fn repl() -> Result<(), String> {

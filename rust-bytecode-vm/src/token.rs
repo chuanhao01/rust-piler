@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+#[derive(Clone)]
 pub enum Token {
     NormalToken {
         _type: TokenType,
@@ -13,7 +14,7 @@ pub enum Token {
     },
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
     // Single-character tokens.
     LeftParen,
